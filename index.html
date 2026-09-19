@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人气投票 · eszytp</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root{
+    --main:#ff5a3c; --main-dark:#e8442a; --blue:#2f7ef5;
+    --bg:#f5f6fa; --card:#fff; --text:#222; --muted:#8a90a2; --line:#eceef3;
+  }
+  body{ font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:var(--bg); color:var(--text); }
+  /* 导航 */
+  header{ position:sticky; top:0; z-index:100; background:#fff; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+  .nav{ max-width:1000px; margin:0 auto; display:flex; align-items:center; padding:0 16px; height:60px; }
+  .logo{ font-size:20px; font-weight:800; color:var(--main); margin-right:28px; white-space:nowrap; }
+  .tabs{ display:flex; gap:6px; flex:1; }
+  .tab{ padding:8px 18px; border-radius:20px; cursor:pointer; font-size:15px; color:#555; border:none; background:none; }
+  .tab.active{ background:var(--main); color:#fff; font-weight:700; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  .page{ display:none; } .page.active{ display:block; }
+  h2.sec{ font-size:18px; margin:22px 0 14px; display:flex; align-items:center; gap:8px; }
+  h2.sec::before{ content:""; width:5px; height:18px; background:var(--main); border-radius:3px; }
+  /* 排行榜 */
+  .rank{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:8px; }
+  .rank-card{ background:var(--card); border-radius:14px; padding:14px 10px; text-align:center; position:relative; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+  .rank-no{ position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; background:#b6bac6; }
+  .rank-card:nth-child(1) .rank-no{ background:#f5a623; }
+  .rank-card:nth-child(2) .rank-no{ background:#9aa6b8; }
+  .rank-card:nth-child(3) .rank-no{ background:#c98a5b; }
+  .rank-card:nth-child(1){ border:2px solid #f5a623; }
+  .rank-ava{ width:64px; height:64px; border-radius:50%; object-fit:cover; margin:6px auto 8px; display:block; border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+  .rank-name{ font-weight:700; font-size:15px; margin-bottom:4px; }
+  .rank-votes{ color:var(--main); font-weight:800; font-size:14px; }
+  /* 投票卡片 */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; }
+  .card{ background:var(--card); border-radius:16px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.06); transition:transform .15s; }
+  .card:hover{ transform:translateY(-3px); }
+  .card-photo{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:#eee; }
+  .card-body{ padding:12px 14px 14px; text-align:center; }
+  .card-name{ font-size:17px; font-weight:800; margin-bottom:6px; }
+  .card-votes{ font-size:13px; color:var(--muted); margin-bottom:10px; }
+  .card-votes b{ color:var(--main); font-size:17px; }
+  .btn{ border:none; border-radius:22px; padding:9px 0; width:100%; font-size:15px; font-weight:700; cursor:pointer; background:var(--main); color:#fff; transition:background .15s; }
+  .btn:hover{ background:var(--main-dark); }
+  .btn.voted{ background:#c9ccd6; cursor:default; }
+  .btn.blue{ background:var(--blue); } .btn.blue:hover{ background:#1f6ae0; }
+  .btn.ghost{ background:#fff; color:var(--main); border:1.5px solid var(--main); }
+  .empty{ text-align:center; color:var(--muted); padding:50px 0; }
+  /* 广场 */
+  .msg-form{ background:#fff; border-radius:14px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom:18px; }
+  .msg-form input{ width:160px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:14px; margin-bottom:10px; }
+  .msg-form textarea{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:14px; resize:vertical; min-height:70px; font-family:inherit; }
+  .msg-form .row{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+  .msg-form .btn{ width:auto; padding:9px 26px; }
+  .msg{ background:#fff; border-radius:12px; padding:13px 15px; margin-bottom:10px; box-shadow:0 1px 6px rgba(0,0,0,.04); }
+  .msg-head{ display:flex; justify-content:space-between; margin-bottom:6px; }
+  .msg-name{ font-weight:700; color:var(--blue); }
+  .msg-time{ font-size:12px; color:var(--muted); }
+  .msg-content{ font-size:15px; line-height:1.6; word-break:break-word; }
+  /* 报名 */
+  .signup{ background:#fff; border-radius:16px; padding:26px; box-shadow:0 2px 12px rgba(0,0,0,.06); max-width:520px; margin:10px auto; }
+  .signup label{ display:block; font-weight:700; margin:16px 0 8px; }
+  .signup input[type=text]{ width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-size:15px; }
+  .drop{ border:2px dashed #cfd4e0; border-radius:14px; padding:26px; text-align:center; color:var(--muted); cursor:pointer; }
+  .drop:hover{ border-color:var(--main); color:var(--main); }
+  #preview{ width:160px; height:160px; object-fit:cover; border-radius:14px; margin:14px auto 0; display:none; }
+  .signup .btn{ margin-top:24px; }
+  .tip{ font-size:13px; color:var(--muted); margin-top:8px; line-height:1.6; }
+  footer{ text-align:center; color:var(--muted); font-size:13px; margin-top:30px; }
+  footer a{ color:var(--muted); text-decoration:none; }
+  #toast{ position:fixed; left:50%; bottom:40px; transform:translateX(-50%); background:rgba(0,0,0,.82); color:#fff; padding:11px 22px; border-radius:24px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s; z-index:999; }
+  #toast.show{ opacity:1; }
+  @media(max-width:640px){ .rank{ grid-template-columns:repeat(2,1fr);} .rank-card:nth-child(5){ grid-column:span 2;} .logo{margin-right:12px; font-size:17px;} .tab{padding:7px 12px; font-size:14px;} }
+</style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <div class="logo">🏆 人气投票</div>
+    <div class="tabs">
+      <button class="tab active" data-page="vote">投票</button>
+      <button class="tab" data-page="plaza">广场</button>
+      <button class="tab" data-page="signup">报名</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- 投票页 -->
+  <section class="page active" id="page-vote">
+    <h2 class="sec">排行榜 · 前五名</h2>
+    <div class="rank" id="rank"></div>
+    <h2 class="sec">全部候选人</h2>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 广场页 -->
+  <section class="page" id="page-plaza">
+    <h2 class="sec">广场留言</h2>
+    <div class="msg-form">
+      <input id="msgName" type="text" maxlength="20" placeholder="你的昵称（可不填）">
+      <textarea id="msgContent" maxlength="300" placeholder="说点什么吧，文明留言哦～"></textarea>
+      <div class="row">
+        <span class="tip" id="msgCount"></span>
+        <button class="btn blue" id="msgSend">发布留言</button>
+      </div>
+    </div>
+    <div id="msgList"></div>
+  </section>
+
+  <!-- 报名页 -->
+  <section class="page" id="page-signup">
+    <h2 class="sec">我要报名</h2>
+    <div class="signup">
+      <label>称号（外号）</label>
+      <input id="signTitle" type="text" maxlength="20" placeholder="例如：闪电侠">
+      <label>上传一张照片</label>
+      <div class="drop" id="drop">点击选择照片<br><span class="tip">将自动居中裁剪为 1:1 正方形</span></div>
+      <input id="signImage" type="file" accept="image/*" hidden>
+      <img id="preview" alt="预览">
+      <button class="btn" id="signSubmit">提交报名</button>
+      <p class="tip">提交后会出现在投票页，大家就可以为你投票啦。</p>
+    </div>
+  </section>
+
+  <footer>eszytp 人气投票 · <a href="/admin">管理员入口</a></footer>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let state = {candidates:[], messages:[]};
+const voted = new Set(JSON.parse(localStorage.getItem('voted')||'[]'));
+
+function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2000); }
+
+function saveVoted(){ localStorage.setItem('voted', JSON.stringify([...voted])); }
+
+function render(){
+  const cands = state.candidates;
+  // 排行榜前五
+  const top5 = cands.slice(0,5);
+  $('#rank').innerHTML = top5.length ? top5.map((c,i)=>`
+    <div class="rank-card">
+      <div class="rank-no">${i+1}</div>
+      <img class="rank-ava" src="/uploads/${esc(c.image)}" alt="">
+      <div class="rank-name">${esc(c.title)}</div>
+      <div class="rank-votes">${c.votes} 票</div>
+    </div>`).join('') : '<div class="empty" style="grid-column:1/-1">还没有人报名，快去报名吧～</div>';
+  // 全部卡片
+  $('#grid').innerHTML = cands.length ? cands.map(c=>{
+    const isVoted = voted.has(c.id);
+    return `<div class="card">
+      <img class="card-photo" src="/uploads/${esc(c.image)}" alt="">
+      <div class="card-body">
+        <div class="card-name">${esc(c.title)}</div>
+        <div class="card-votes"><b>${c.votes}</b> 票</div>
+        <button class="btn ${isVoted?'voted':''}" data-id="${c.id}" ${isVoted?'disabled':''}>${isVoted?'已投 ✓':'投一票'}</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty" style="grid-column:1/-1">暂无候选人</div>';
+  // 留言
+  $('#msgList').innerHTML = state.messages.length ? state.messages.map(m=>`
+    <div class="msg">
+      <div class="msg-head"><span class="msg-name">${esc(m.name)}</span><span class="msg-time">${esc(m.time)}</span></div>
+      <div class="msg-content">${esc(m.content)}</div>
+    </div>`).join('') : '<div class="empty">还没有留言，来抢沙发～</div>';
+}
+
+async function loadState(){
+  try{
+    const r = await fetch('/api/state');
+    state = await r.json();
+    render();
+  }catch(e){}
+}
+
+// 投票
+$('#grid').addEventListener('click', async e=>{
+  const btn = e.target.closest('button[data-id]');
+  if(!btn || btn.disabled) return;
+  const id = Number(btn.dataset.id);
+  const r = await fetch('/api/vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  const d = await r.json();
+  if(d.ok){ voted.add(id); saveVoted(); toast('投票成功！'); loadState(); }
+  else toast(d.msg||'投票失败');
+});
+
+// tab 切换
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  $('#page-'+t.dataset.page).classList.add('active');
+}));
+
+// 留言
+$('#msgContent').addEventListener('input',e=>{ $('#msgCount').textContent = e.target.value.length+'/300'; });
+$('#msgSend').addEventListener('click', async ()=>{
+  const name=$('#msgName').value.trim(), content=$('#msgContent').value.trim();
+  if(!content){ toast('留言内容不能为空'); return; }
+  const r=await fetch('/api/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,content})});
+  const d=await r.json();
+  if(d.ok){ $('#msgContent').value=''; $('#msgCount').textContent=''; toast('留言成功'); loadState(); }
+  else toast(d.msg||'发布失败');
+});
+
+// 报名
+const fileInput=$('#signImage'); let chosen=null;
+$('#drop').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',()=>{
+  const f=fileInput.files[0]; if(!f) return;
+  chosen=f;
+  const url=URL.createObjectURL(f); const pv=$('#preview');
+  pv.src=url; pv.style.display='block';
+});
+$('#signSubmit').addEventListener('click', async ()=>{
+  const title=$('#signTitle').value.trim();
+  if(!title){ toast('请填写称号'); return; }
+  if(!chosen){ toast('请选择照片'); return; }
+  const fd=new FormData(); fd.append('title',title); fd.append('image',chosen);
+  $('#signSubmit').disabled=true; $('#signSubmit').textContent='提交中…';
+  const r=await fetch('/api/signup',{method:'POST',body:fd});
+  const d=await r.json();
+  $('#signSubmit').disabled=false; $('#signSubmit').textContent='提交报名';
+  if(d.ok){ toast('报名成功！'); $('#signTitle').value=''; chosen=null; fileInput.value=''; $('#preview').style.display='none';
+    document.querySelector('.tab[data-page="vote"]').click(); loadState(); }
+  else toast(d.msg||'报名失败');
+});
+
+loadState();
+setInterval(loadState, 3000); // 每3秒实时刷新
+</script>
+</body>
+</html>
